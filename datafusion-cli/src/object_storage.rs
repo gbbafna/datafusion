@@ -29,11 +29,13 @@ use datafusion::execution::context::SessionState;
 use async_trait::async_trait;
 use aws_config::BehaviorVersion;
 use aws_credential_types::provider::ProvideCredentials;
+use foyer::{DirectFsDeviceOptions, HybridCache, HybridCacheBuilder};
 use object_store::aws::{AmazonS3Builder, AwsCredential};
 use object_store::gcp::GoogleCloudStorageBuilder;
 use object_store::http::HttpBuilder;
 use object_store::{ClientOptions, CredentialProvider, ObjectStore};
 use url::Url;
+use crate::hybrid::FoyerBlockCache;
 
 pub async fn get_s3_object_store_builder(
     url: &Url,
@@ -405,8 +407,10 @@ pub(crate) async fn get_object_store(
                     "Given table options incompatible with the 's3' scheme"
                 );
             };
+
             let builder = get_s3_object_store_builder(url, options).await?;
-            Arc::new(builder.build()?)
+            FoyerBlockCache::new(Arc::new(builder.build()?))
+            // Arc::new(builder.build()?)
         }
         "oss" => {
             let Some(options) = table_options.extensions.get::<AwsOptions>() else {
