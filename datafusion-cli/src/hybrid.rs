@@ -1,8 +1,7 @@
 use std::io::{Read, Write};
 use std::ops::Range;
 use async_trait::async_trait;
-use foyer::{DirectFsDeviceOptions, Engine, HybridCache, HybridCacheBuilder,
-            Code, CodeResult};
+use foyer::{DirectFsDeviceOptions, Engine, HybridCache, HybridCacheBuilder, Code, CodeResult, RecoverMode};
 use std::{ops::RangeInclusive};
 use std::collections::HashSet;
 use futures::{Stream, stream::BoxStream};
@@ -197,10 +196,12 @@ impl FoyerBlockCache {
         println!("Creating foyer cahce now");
 
         let cache: HybridCache<String, BlockData> = HybridCacheBuilder::new()
-            .memory(64 * 1024 * 1024)
+            .memory(12 * 1024 * 1024)
             .with_shards(4)
             .storage(Engine::Large) // use large object disk cache engine only
-            .with_device_options(DirectFsDeviceOptions::new( "/tmp/foyer").with_capacity(3 * 1024 * 1024 * 1024))
+            .with_device_options(DirectFsDeviceOptions::new( "/tmp/foyer").with_capacity(30 * 1024 * 1024 * 1024))
+            .with_flush(true)
+            .with_recover_mode(RecoverMode::Strict)
             .build().await.map_err(|e| Error::NotImplemented)?;
 
         // Listing down all config options here
